@@ -36,17 +36,18 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   http: ^1.2.2
-  provider: ^6.1.2
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   url_launcher: ^6.3.0
   shimmer: ^3.0.0
   shared_preferences: ^2.3.2
-  internet_connection_checker: ^2.0.0
-  maps_launcher: ^2.2.1
+  internet_connection_checker: ^3.0.1
+  maps_launcher: ^3.0.0+1
   share_plus: ^10.0.2
   screenshot: ^3.0.0
   location: ^6.0.2
+  equatable: ^2.0.7
+  flutter_bloc: ^9.0.0
 
 
 dev_dependencies:

@@ -1,5 +1,8 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
-import 'package:dtt_assessment/providers/application_provider.dart';
+import 'package:dtt_assessment/blocs/bookmark_bloc.dart';
+import 'package:dtt_assessment/blocs/location_bloc.dart';
+import 'package:dtt_assessment/blocs/theme_bloc.dart';
+import 'package:dtt_assessment/events/bookmark_event.dart';
 import 'package:dtt_assessment/widgets/house_screenshot.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -27,7 +30,7 @@ class HouseInfoScreen extends StatefulWidget {
 class _HouseInfoScreenState extends State<HouseInfoScreen> {
   @override
   Widget build(BuildContext context) {
-    var applicationProvider = Provider.of<ApplicationProvider>(context);
+    var locationBloc = context.watch<LocationBloc>();
     var location = LatLng(
         widget.house.latitude!.toDouble(), widget.house.longitude!.toDouble());
 
@@ -49,13 +52,15 @@ class _HouseInfoScreenState extends State<HouseInfoScreen> {
               IconButton(
                   onPressed: () {
                     context
-                        .read<ApplicationProvider>()
-                        .togglebookMark(widget.house);
+                        .read<BookmarkBloc>()
+                        .add(ToggleBookmark(houseId: widget.house.id!));
                   },
-                  icon: Icon(
-                      context.watch<ApplicationProvider>().inList(widget.house)
-                          ? Icons.bookmark_remove
-                          : Icons.bookmark_add_outlined))
+                  icon: Icon(context
+                          .watch<BookmarkBloc>()
+                          .bookmarkedHouses
+                          .contains(widget.house.id)
+                      ? Icons.bookmark_remove
+                      : Icons.bookmark_add_outlined))
             ],
             expandedHeight: 300,
             pinned: true,
@@ -138,9 +143,9 @@ class _HouseInfoScreenState extends State<HouseInfoScreen> {
                                       widget.house.bathrooms.toString()),
                                   information(CustomIcons.ic_layers,
                                       widget.house.size.toString()),
-                                  if (applicationProvider.location != null)
+                                  if (locationBloc.locationData != null)
                                     information(CustomIcons.ic_location,
-                                        "${const Distance().as(LengthUnit.Kilometer, LatLng(applicationProvider.location!.latitude!, applicationProvider.location!.longitude!), location)} Km"),
+                                        "${const Distance().as(LengthUnit.Kilometer, LatLng(locationBloc.locationData!.latitude!, locationBloc.locationData!.longitude!), location)} Km"),
                                 ],
                               ),
                             ),
@@ -199,7 +204,7 @@ class _HouseInfoScreenState extends State<HouseInfoScreen> {
   }
 
   Widget information(IconData icon, String value) {
-    var isDarkMode = context.watch<ApplicationProvider>().isDarkMode;
+    var isDarkMode = context.watch<ThemeBloc>().isDarkMode;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

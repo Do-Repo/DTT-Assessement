@@ -2,8 +2,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPrefService {
   SharedPrefService._privateConstructor();
+
   static final SharedPrefService _instance =
       SharedPrefService._privateConstructor();
+
   factory SharedPrefService() {
     return _instance;
   }

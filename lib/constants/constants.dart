@@ -12,6 +12,9 @@ class Constants {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 
+  static String BOOKMARK_KEY = "BOOKMARKEDHOUSES";
+  static String DARKMODE_KEY = "ISDARKMODE";
+
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     fontFamily: TextStyles.fontFamily,

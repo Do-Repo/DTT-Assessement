@@ -1,24 +1,28 @@
+import 'package:dtt_assessment/blocs/house_bloc.dart';
+import 'package:dtt_assessment/blocs/theme_bloc.dart';
 import 'package:dtt_assessment/constants/constants.dart';
 import 'package:dtt_assessment/constants/custom_colors.dart';
 import 'package:dtt_assessment/constants/custom_icons.dart';
+import 'package:dtt_assessment/constants/enums.dart';
 import 'package:dtt_assessment/constants/textstyles.dart';
-import 'package:dtt_assessment/providers/application_provider.dart';
-import 'package:dtt_assessment/providers/house_provider.dart';
+import 'package:dtt_assessment/events/house_event.dart';
+import 'package:dtt_assessment/models/filter_model.dart';
 import 'package:dtt_assessment/screens/map_screen.dart';
 import 'package:dtt_assessment/widgets/filter_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class SearchBarDelegate extends SliverPersistentHeaderDelegate {
-  SearchBarDelegate({required this.searchController, this.onMapView});
-  final TextEditingController searchController;
+  SearchBarDelegate({this.onMapView});
+
   final bool? onMapView;
+  final searchController = TextEditingController();
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
-    var houseProvider = context.read<HouseProvider>();
-    var isDarkMode = context.watch<ApplicationProvider>().isDarkMode;
+    var isDarkMode = context.watch<ThemeBloc>().isDarkMode;
+    var houseBloc = context.read<HouseBloc>();
 
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -33,8 +37,7 @@ class SearchBarDelegate extends SliverPersistentHeaderDelegate {
                 if (onMapView ?? false) {
                   Navigator.pop(context);
                 } else {
-                  Constants.push(
-                      context, MapScreen(searchController: searchController));
+                  Constants.push(context, const MapScreen());
                 }
               },
               child: Container(
@@ -55,20 +58,14 @@ class SearchBarDelegate extends SliverPersistentHeaderDelegate {
           ),
           Flexible(
             child: TextField(
-              controller: searchController,
               onChanged: (value) {
-                houseProvider.setSearchQuery(value);
+                houseBloc.add(SearchHouses(query: value));
               },
               style: TextStyles.input,
               decoration: InputDecoration(
                 contentPadding: const EdgeInsets.all(10),
                 suffixIcon: IconButton(
-                  onPressed: () {
-                    if (searchController.text.isNotEmpty) {
-                      searchController.clear();
-                      houseProvider.setSearchQuery('');
-                    }
-                  },
+                  onPressed: () {},
                   icon: Icon((searchController.text.isEmpty)
                       ? CustomIcons.ic_search
                       : CustomIcons.ic_close),
@@ -99,7 +96,10 @@ class SearchBarDelegate extends SliverPersistentHeaderDelegate {
                 height: double.infinity,
                 margin: const EdgeInsets.only(left: 5),
                 decoration: BoxDecoration(
-                    border: (context.watch<HouseProvider>().filterIsActive)
+                    // Current filter different than empty Filtermodel, means filter is active
+                    // thus the button is highlighted
+                    border: (context.watch<HouseBloc>().currentFilters !=
+                            FilterModel())
                         ? Border.all(width: 2, color: Colors.black)
                         : null,
                     color:
@@ -136,19 +136,18 @@ class SearchBarDelegate extends SliverPersistentHeaderDelegate {
                   ),
               menuChildren: [
                 MenuItemButton(
-                  onPressed: () => houseProvider.sortByPriceASC(),
+                  onPressed: () => houseBloc
+                      .add(SortHouses(sortOrder: SortOrder.sortByPriceASC)),
                   child: Text("Price Ascending", style: TextStyles.body),
                 ),
                 MenuItemButton(
-                  onPressed: () => houseProvider.sortByPriceDSC(),
+                  onPressed: () => houseBloc
+                      .add(SortHouses(sortOrder: SortOrder.sortByPriceDSC)),
                   child: Text("Price Descending", style: TextStyles.body),
                 ),
                 MenuItemButton(
-                  onPressed: () {},
-                  child: Text("Nearest First", style: TextStyles.body),
-                ),
-                MenuItemButton(
-                  onPressed: () => houseProvider.sortByCity(),
+                  onPressed: () => houseBloc
+                      .add(SortHouses(sortOrder: SortOrder.sortByCity)),
                   child: Text("City", style: TextStyles.body),
                 ),
               ])

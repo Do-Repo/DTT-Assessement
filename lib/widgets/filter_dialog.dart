@@ -1,9 +1,11 @@
+import 'package:dtt_assessment/blocs/house_bloc.dart';
+import 'package:dtt_assessment/blocs/theme_bloc.dart';
 import 'package:dtt_assessment/constants/custom_colors.dart';
 import 'package:dtt_assessment/constants/custom_icons.dart';
 import 'package:dtt_assessment/constants/extensions.dart';
 import 'package:dtt_assessment/constants/textstyles.dart';
-import 'package:dtt_assessment/providers/application_provider.dart';
-import 'package:dtt_assessment/providers/house_provider.dart';
+import 'package:dtt_assessment/events/house_event.dart';
+import 'package:dtt_assessment/models/filter_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -29,27 +31,23 @@ class _FilterDialogState extends State<FilterDialog> {
 
   @override
   void initState() {
-    var houseProvider = context.read<HouseProvider>();
-    minBed = TextEditingController(
-        text: houseProvider.minBedRooms.toNullableString());
-    maxBed = TextEditingController(
-        text: houseProvider.maxBedrooms.toNullableString());
-    minBath = TextEditingController(
-        text: houseProvider.minBathrooms.toNullableString());
-    maxBath = TextEditingController(
-        text: houseProvider.maxBathrooms.toNullableString());
-    minPrice =
-        TextEditingController(text: houseProvider.minPrice.toNullableString());
-    maxPrice =
-        TextEditingController(text: houseProvider.maxPrice.toNullableString());
+    var filter = context.read<HouseBloc>().currentFilters;
+    minBed = TextEditingController(text: filter.minBedrooms.toNullableString());
+    maxBed = TextEditingController(text: filter.maxBedrooms.toNullableString());
+    minBath =
+        TextEditingController(text: filter.minBathrooms.toNullableString());
+    maxBath =
+        TextEditingController(text: filter.maxBathrooms.toNullableString());
+    minPrice = TextEditingController(text: filter.minPrice.toNullableString());
+    maxPrice = TextEditingController(text: filter.maxPrice.toNullableString());
 
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    var houseProvider = context.read<HouseProvider>();
-    var isDarkMode = context.watch<ApplicationProvider>().isDarkMode;
+    var houseBloc = context.read<HouseBloc>();
+    var isDarkMode = context.watch<ThemeBloc>().isDarkMode;
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
       child: Padding(
@@ -67,7 +65,8 @@ class _FilterDialogState extends State<FilterDialog> {
                     const Spacer(),
                     TextButton(
                         onPressed: () {
-                          houseProvider.applyFilters();
+                          // Empty filtermodel to clear filters
+                          houseBloc.add(FilterHouses(filters: FilterModel()));
                           Navigator.pop(context);
                         },
                         child: Text("Clear", style: TextStyles.input))
@@ -138,14 +137,14 @@ class _FilterDialogState extends State<FilterDialog> {
                     TextButton(
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            houseProvider.applyFilters(
-                              minBed: int.tryParse(minBed.text),
-                              maxBed: int.tryParse(maxBed.text),
-                              minBath: int.tryParse(minBath.text),
-                              maxBath: int.tryParse(maxBath.text),
-                              minPrice: int.tryParse(minPrice.text),
-                              maxPrice: int.tryParse(maxPrice.text),
-                            );
+                            houseBloc.add(FilterHouses(
+                                filters: FilterModel(
+                                    minBedrooms: int.tryParse(minBed.text),
+                                    maxBedrooms: int.tryParse(maxBed.text),
+                                    minBathrooms: int.tryParse(minBath.text),
+                                    maxBathrooms: int.tryParse(maxBath.text),
+                                    minPrice: int.tryParse(minPrice.text),
+                                    maxPrice: int.tryParse(maxPrice.text))));
                             Navigator.pop(context);
                           }
                         },
@@ -162,7 +161,7 @@ class _FilterDialogState extends State<FilterDialog> {
 
   Widget intTextfield(String suffix, TextEditingController controller,
       {FormFieldValidator<String>? validator}) {
-    var isDarkMode = context.watch<ApplicationProvider>().isDarkMode;
+    var isDarkMode = context.watch<ThemeBloc>().isDarkMode;
     return Padding(
         padding: const EdgeInsets.only(bottom: 5.0),
         child: TextFormField(

@@ -1,10 +1,11 @@
+import 'package:dtt_assessment/blocs/location_bloc.dart';
+import 'package:dtt_assessment/blocs/theme_bloc.dart';
 import 'package:dtt_assessment/constants/constants.dart';
 import 'package:dtt_assessment/constants/custom_colors.dart';
 import 'package:dtt_assessment/constants/custom_icons.dart';
 import 'package:dtt_assessment/constants/extensions.dart';
 import 'package:dtt_assessment/constants/textstyles.dart';
 import 'package:dtt_assessment/models/house_model.dart';
-import 'package:dtt_assessment/providers/application_provider.dart';
 import 'package:dtt_assessment/screens/house_info_screen.dart';
 import 'package:dtt_assessment/widgets/widget_animator.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,7 @@ class HouseCard extends StatefulWidget {
 class _HouseCardState extends State<HouseCard> {
   @override
   Widget build(BuildContext context) {
-    var applicationProvider = Provider.of<ApplicationProvider>(context);
+    var locationBloc = context.watch<LocationBloc>();
 
     // WidgetAnimator is a cool widget that makes its child fade in and out
     return WidgetAnimator(
@@ -79,9 +80,9 @@ class _HouseCardState extends State<HouseCard> {
                                     widget.house.bathrooms.toString()),
                                 information(CustomIcons.ic_layers,
                                     widget.house.size.toString()),
-                                if (applicationProvider.location != null)
+                                if (locationBloc.locationData != null)
                                   information(CustomIcons.ic_location,
-                                      "${const Distance().as(LengthUnit.Kilometer, LatLng(applicationProvider.location!.latitude!, applicationProvider.location!.longitude!), LatLng(widget.house.latitude!.toDouble(), widget.house.longitude!.toDouble()))} Km"),
+                                      "${const Distance().as(LengthUnit.Kilometer, LatLng(locationBloc.locationData!.latitude!, locationBloc.locationData!.longitude!), LatLng(widget.house.latitude!.toDouble(), widget.house.longitude!.toDouble()))} Km"),
                               ],
                             ),
                           ),
@@ -99,7 +100,7 @@ class _HouseCardState extends State<HouseCard> {
   }
 
   Widget information(IconData icon, String value) {
-    var isDarkMode = context.watch<ApplicationProvider>().isDarkMode;
+    var isDarkMode = context.watch<ThemeBloc>().isDarkMode;
 
     return Row(
       mainAxisSize: MainAxisSize.min,

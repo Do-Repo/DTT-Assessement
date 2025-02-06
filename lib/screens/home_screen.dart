@@ -1,13 +1,15 @@
+import 'package:dtt_assessment/blocs/bookmark_bloc.dart';
+import 'package:dtt_assessment/blocs/house_bloc.dart';
 import 'package:dtt_assessment/constants/constants.dart';
 import 'package:dtt_assessment/constants/textstyles.dart';
-import 'package:dtt_assessment/providers/application_provider.dart';
-import 'package:dtt_assessment/providers/house_provider.dart';
+import 'package:dtt_assessment/events/house_event.dart';
 import 'package:dtt_assessment/screens/bookmarks_screen.dart';
+import 'package:dtt_assessment/states/house_state.dart';
 import 'package:dtt_assessment/widgets/housecard.dart';
 import 'package:dtt_assessment/widgets/housecard_loading.dart';
 import 'package:dtt_assessment/widgets/searchbar.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class Homescreen extends StatefulWidget {
   const Homescreen({super.key});
@@ -18,14 +20,12 @@ class Homescreen extends StatefulWidget {
 
 class _HomescreenState extends State<Homescreen>
     with AutomaticKeepAliveClientMixin {
-  late HouseProvider houseProvider;
   final searchController = TextEditingController();
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      houseProvider = Provider.of<HouseProvider>(context, listen: false);
-      houseProvider.fetchHouses();
+      context.read<HouseBloc>().add(FetchHouses());
     });
 
     super.initState();
@@ -34,15 +34,15 @@ class _HomescreenState extends State<Homescreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    var applicationProvider = Provider.of<ApplicationProvider>(context);
+    var bookmarkBloc = context.watch<BookmarkBloc>();
 
     return Scaffold(
       appBar: AppBar(
         title: Text("DTT REAL ESTATE", style: TextStyles.header_01),
         actions: [
-          if (applicationProvider.bookMark.isNotEmpty)
+          if (bookmarkBloc.bookmarkedHouses.isNotEmpty)
             Badge.count(
-                count: applicationProvider.bookMark.length,
+                count: bookmarkBloc.bookmarkedHouses.length,
                 offset: const Offset(-5, 5),
                 child: IconButton(
                     onPressed: () {
@@ -53,8 +53,8 @@ class _HomescreenState extends State<Homescreen>
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15.0),
-        child: Consumer<HouseProvider>(builder: (context, provider, child) {
-          if (provider.isLoading) {
+        child: BlocBuilder<HouseBloc, HouseState>(builder: (context, state) {
+          if (state is HouseLoading) {
             // Loading screen:
             // Just some cards with the same layout as the real cards and a smooth shimmer
             return SingleChildScrollView(
@@ -63,50 +63,31 @@ class _HomescreenState extends State<Homescreen>
                     List.generate(10, (context) => const HousecardLoading()),
               ),
             );
-          } else if (provider.errorMessage != null) {
-            // Error screen:
-            // For now its just showing the error, with a try again button to... try again :)
-            // TODO: Make it look better?
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(provider.errorMessage.toString()),
-                  TextButton(
-                      onPressed: () {
-                        houseProvider.fetchHouses();
-                      },
-                      child: const Text("Try again!"))
-                ],
-              ),
-            );
-          } else {
-            // The homescreen:
+          } else if (state is HouseLoaded) {
             return RefreshIndicator(
               onRefresh: () async {
+                var houseBloc = context.read<HouseBloc>();
                 // A slight delay looks a lot better :)
                 return Future.delayed(Durations.medium4).whenComplete(() {
-                  houseProvider.fetchHouses();
+                  houseBloc.add(FetchHouses());
                 });
               },
               child: CustomScrollView(
                 slivers: [
                   SliverPersistentHeader(
-                      floating: true,
-                      delegate: SearchBarDelegate(
-                          searchController: searchController)),
-                  if (provider.houses.isNotEmpty)
+                      floating: true, delegate: SearchBarDelegate()),
+                  if (state.houses.isNotEmpty)
                     SliverList.separated(
-                      itemCount: provider.houses.length,
+                      itemCount: state.houses.length,
                       separatorBuilder: (context, index) {
                         return const SizedBox(height: 10);
                       },
                       itemBuilder: (context, index) {
-                        return HouseCard(house: provider.houses[index]);
+                        return HouseCard(house: state.houses[index]);
                       },
                     ),
                   // No results found screen:
-                  if (provider.houses.isEmpty)
+                  if (state.houses.isEmpty)
                     SliverFillRemaining(
                         child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -124,7 +105,24 @@ class _HomescreenState extends State<Homescreen>
                 ],
               ),
             );
+          } else if (state is HouseError) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(state.message),
+                  TextButton(
+                      onPressed: () {
+                        context.read<HouseBloc>().add(FetchHouses());
+                      },
+                      child: const Text("Try again!"))
+                ],
+              ),
+            );
           }
+
+          // Should never happen really
+          return Container();
         }),
       ),
     );

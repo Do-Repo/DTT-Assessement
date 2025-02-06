@@ -1,7 +1,7 @@
+import 'package:dtt_assessment/blocs/house_bloc.dart';
 import 'package:dtt_assessment/constants/constants.dart';
 import 'package:dtt_assessment/constants/custom_colors.dart';
 import 'package:dtt_assessment/constants/textstyles.dart';
-import 'package:dtt_assessment/providers/house_provider.dart';
 import 'package:dtt_assessment/screens/house_info_screen.dart';
 import 'package:dtt_assessment/widgets/searchbar.dart';
 import 'package:flutter/material.dart';
@@ -10,31 +10,30 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
 class MapScreen extends StatelessWidget {
-  const MapScreen({super.key, required this.searchController});
-  final TextEditingController searchController;
+  const MapScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    var houseProvider = Provider.of<HouseProvider>(context).houses;
+    var houseBloc = context.watch<HouseBloc>();
 
     return Scaffold(
       appBar: AppBar(title: Text("MAP VIEW", style: TextStyles.header_01)),
       body: CustomScrollView(
         slivers: [
           SliverPersistentHeader(
-              pinned: true,
-              delegate: SearchBarDelegate(
-                  searchController: searchController, onMapView: true)),
+              pinned: true, delegate: SearchBarDelegate(onMapView: true)),
           SliverFillRemaining(
             child: FlutterMap(
                 options: MapOptions(
                     initialZoom: 8,
-                    initialCenter: (houseProvider.isEmpty)
+                    initialCenter: (houseBloc.filteredHouses.isEmpty)
                         // No houses? Just go to Amsterdam :)
                         ? const LatLng(52.3676, 4.9041)
                         // Start at the first house in the list
-                        : LatLng(houseProvider.first.latitude!.toDouble(),
-                            houseProvider.first.longitude!.toDouble())),
+                        : LatLng(
+                            houseBloc.filteredHouses.first.latitude!.toDouble(),
+                            houseBloc.filteredHouses.first.longitude!
+                                .toDouble())),
                 children: [
                   TileLayer(
                     urlTemplate:
@@ -43,7 +42,7 @@ class MapScreen extends StatelessWidget {
                   ),
                   MarkerLayer(markers: [
                     // Every building gets its Marker on the map, have you tried clicking on it? :)
-                    ...houseProvider.map((house) => Marker(
+                    ...houseBloc.filteredHouses.map((house) => Marker(
                         width: 50,
                         height: 50,
                         rotate: true,
